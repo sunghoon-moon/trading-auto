@@ -72,6 +72,8 @@ function App() {
   const [buyPrice, setBuyPrice] = useState('');
   const [takeProfit, setTakeProfit] = useState('');
   const [target1, setTarget1] = useState('');
+  const [target2, setTarget2] = useState('');
+  const [target3, setTarget3] = useState('');
 
   const [markets, setMarkets] = useState([]);
   const [showSuggest, setShowSuggest] = useState(false);
@@ -276,6 +278,8 @@ function App() {
     const buy = Number(buyPrice);
     const tp = Number(takeProfit);
     const t1 = Number(target1);
+    const t2 = target2.trim() === '' ? null : Number(target2);
+    const t3 = target3.trim() === '' ? null : Number(target3);
     const name = coinName.trim();
     const symbol = ticker.trim().toUpperCase();
 
@@ -295,6 +299,21 @@ function App() {
       setStatus('1차 목표가를 올바르게 입력해 주세요.');
       return;
     }
+    if (t2 !== null && (!Number.isFinite(t2) || t2 <= 0)) {
+      setStatus('2차 목표가를 올바르게 입력해 주세요.');
+      return;
+    }
+    if (t3 !== null && (!Number.isFinite(t3) || t3 <= 0)) {
+      setStatus('3차 목표가를 올바르게 입력해 주세요.');
+      return;
+    }
+
+    const jobs = [
+      { label: '자율익절', price: tp },
+      { label: '1차목표', price: t1 },
+    ];
+    if (t2 !== null) jobs.push({ label: '2차목표', price: t2 });
+    if (t3 !== null) jobs.push({ label: '3차목표', price: t3 });
 
     setGenerating(true);
     setStatus('이미지 생성 중…');
@@ -303,28 +322,22 @@ function App() {
       const amount = randomBuyAmount();
       const safeName = name.replace(/[\\/:*?"<>|]/g, '_');
 
-      // 1) 자율 익절
-      const calcTp = buildCalc(buy, tp, amount);
-      applySnapshot({
-        name,
-        symbol,
-        ...calcTp,
-      });
-      await fitHoldingsFont();
-      await captureOnce(`${safeName}_자율익절.png`);
-      await sleep(300);
+      for (let i = 0; i < jobs.length; i += 1) {
+        const job = jobs[i];
+        const calc = buildCalc(buy, job.price, amount);
+        applySnapshot({
+          name,
+          symbol,
+          ...calc,
+        });
+        await fitHoldingsFont();
+        await captureOnce(`${safeName}_${job.label}.png`);
+        if (i < jobs.length - 1) await sleep(300);
+      }
 
-      // 2) 1차 목표 (매수금액·보유수량 동일)
-      const calcT1 = buildCalc(buy, t1, amount);
-      applySnapshot({
-        name,
-        symbol,
-        ...calcT1,
-      });
-      await fitHoldingsFont();
-      await captureOnce(`${safeName}_1차목표.png`);
-
-      setStatus(`완료 — 매수금액 ${formatIntegerKrw(amount)}원 기준, 이미지 2장 저장됨`);
+      setStatus(
+        `완료 — 매수금액 ${formatIntegerKrw(amount)}원 기준, 이미지 ${jobs.length}장 저장됨`
+      );
     } catch (err) {
       console.error(err);
       setStatus('이미지 생성 중 오류가 발생했습니다.');
@@ -429,8 +442,18 @@ function App() {
         </div>
 
         <div className="inputWrap">
+          <div className="label">2차 목표가 (선택)</div>
+          <input type="text" value={target2} onChange={onlyNumber(setTarget2)} />
+        </div>
+
+        <div className="inputWrap">
+          <div className="label">3차 목표가 (선택)</div>
+          <input type="text" value={target3} onChange={onlyNumber(setTarget3)} />
+        </div>
+
+        <div className="inputWrap">
           <button type="button" onClick={handleGenerate} disabled={generating}>
-            {generating ? '생성 중…' : '이미지 2장 생성'}
+            {generating ? '생성 중…' : '이미지 생성'}
           </button>
         </div>
 
