@@ -1,0 +1,76 @@
+* {margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans KR', sans-serif !important; word-break: keep-all; word-wrap: break-word; font-size: 14px; color: #000;}
+html {scroll-behavior: smooth;}
+a {text-decoration: none; cursor: pointer;}
+a.file {text-decoration: underline;}
+li {list-style-type: none;}
+img {vertical-align: middle;}
+table {border-collapse: collapse; width: 100%; table-layout: fixed;}
+input:focus {outline: none;}
+
+.d-flex {display: flex;}
+
+.imgWrap {position: relative; width: 800px;}
+.imgWrap .img {position: relative;}
+.imgWrap .img img {width: 100%; display: block;}
+.imgWrap .img .option {position: absolute; display: flex; align-items: center; gap: 7px;}
+.imgWrap .img .option img {width: 43px; vertical-align: top; padding-top: 2px;}
+.imgWrap .img .option .unit {color: #d5d3d6; font-size: 32px; font-weight: 600;}
+.imgWrap .img .option01 {color: #d5d3d6; font-size: 32px; font-weight: 600; top: 7.5%; left: 3%;}
+.imgWrap .img .option02 {color: #d5d3d6; font-size: 32px; font-weight: 600; top: 20.5%; left: 3%;}
+.imgWrap .img .option03 {color: #b4474b; font-size: 32px; font-weight: 400; top: 7%; right: 3%; text-align: right;}
+.imgWrap .img .option04 {color: #b4474b; font-size: 32px; font-weight: 400; top: 21.5%; right: 3%; text-align: right;}
+
+.imgWrap .img .option05 {color: #d5d3d6; font-size: 32px; font-weight: 400; top: 45%; right: 54%; text-align: right; white-space: nowrap;}
+.imgWrap .img .option05 .unit {font-size: inherit; font-weight: 600;}
+.imgWrap .img .option06 {color: #d5d3d6; font-size: 32px; font-weight: 400; top: 45%; right: 3%; text-align: right;}
+.imgWrap .img .option07 {color: #d5d3d6; font-size: 32px; font-weight: 400; top: 72%; right: 54%; text-align: right;}
+.imgWrap .img .option08 {color: #d5d3d6; font-size: 32px; font-weight: 400; top: 72%; right: 3%; text-align: right;}
+
+
+.imgWrap .line {position: absolute; top: 0; left: 0; width: 100%; height: 1px; background-color: skyblue; z-index: 1;}
+.imgWrap .line01 {top: 17.7%;}
+.imgWrap .line02 {top: 32.5%;}
+.imgWrap .line03 {top: 56.5%;}
+.imgWrap .line04 {top: 83%;}
+
+.imgWrap .hor {position: absolute; top: 0; left: 0; width: 1px; height: 100%; background-color: skyblue; z-index: 1;}
+.imgWrap .hor01 {left: 3%;}
+.imgWrap .hor02 {left: 46.2%;}
+.imgWrap .hor03 {left: auto; right: 3%;}
+
+.formWrap {display: flex; flex-direction: column; gap: 8px; padding: 10px; max-width: 520px;}
+.inputWrap {display: flex; align-items: flex-start; gap: 8px;}
+.inputWrap .label {display: flex; align-items: center; width: 110px; min-height: 32px; flex-shrink: 0;}
+.inputWrap input {flex: 1; min-height: 32px; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px;}
+.inputWrap button {min-height: 36px; padding: 6px 16px; cursor: pointer;}
+.inputWrap button:disabled {opacity: 0.6; cursor: not-allowed;}
+
+.suggestWrap {align-items: flex-start;}
+.suggestField {position: relative; flex: 1;}
+.suggestField input {width: 100%;}
+.suggestList {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 100%;
+    z-index: 10;
+    max-height: 220px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+.suggestList li {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 10px;
+    cursor: pointer;
+}
+.suggestList li:hover {background: #f3f3f3;}
+.suggestList li span {color: #666; font-size: 13px;}
+.statusMsg {padding: 4px 0; color: #333; font-size: 13px;}
