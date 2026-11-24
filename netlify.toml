@@ -1,6 +1,9 @@
 [build]
-    command = "npm run build"
+    command = "CI= npm run build"
     publish = "build"
+
+[build.environment]
+    NODE_VERSION = "20"
 
 # 업비트 API CORS 우회 (브라우저에서 /api/upbit/* 호출 시)
 [[redirects]]

@@ -38,16 +38,17 @@ function formatIntegerKrw(value) {
   return Math.round(value).toLocaleString('ko-KR');
 }
 
-/** 1000만~3000만, 끝자리 0이 과도하지 않은 금액 */
+/** 3000만 이상 ~ 6000만 미만, 끝자리 0이 과도하지 않은 금액 */
 function randomBuyAmount() {
-  let amount =
-    Math.floor(Math.random() * (30000000 - 10000000 + 1)) + 10000000;
+  const min = 30000000;
+  const max = 59999999;
+  let amount = Math.floor(Math.random() * (max - min + 1)) + min;
 
   // 0000 이상으로 끝나면 끝자리 흔들기
   if (amount % 10000 === 0) {
     amount += Math.floor(Math.random() * 8999) + 1001;
-    if (amount > 30000000) amount -= 10000;
-    if (amount < 10000000) amount += 10000;
+    if (amount > max) amount -= 10000;
+    if (amount < min) amount += 10000;
   }
 
   return amount;
