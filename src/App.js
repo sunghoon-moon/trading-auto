@@ -7,12 +7,22 @@ const HOLDINGS_FONT_DEFAULT = 32;
 const HOLDINGS_FONT_MIN = 18;
 const LEFT_PAD_RATIO = 0.03;
 const STORAGE_KEY = 'trading-auto:records:v1';
+const RETENTION_DAYS = 30;
+
+/** 마지막 활동일(최신화일 또는 생성일) 기준 보관 기간이 지난 기록 제거 */
+function pruneRecords(list) {
+  const limit = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+  return list.filter((r) => {
+    const time = new Date(r.updatedAt || r.createdAt).getTime();
+    return Number.isNaN(time) || time >= limit;
+  });
+}
 
 function loadRecords() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? pruneRecords(parsed) : [];
   } catch (err) {
     console.error(err);
     return [];
@@ -522,7 +532,7 @@ function App() {
     try {
       const parsed = JSON.parse(await file.text());
       if (!Array.isArray(parsed)) throw new Error('형식 오류');
-      const valid = parsed.filter(isValidRecord);
+      const valid = pruneRecords(parsed.filter(isValidRecord));
       if (valid.length === 0) throw new Error('유효한 기록 없음');
 
       setRecords((prev) => {
@@ -680,7 +690,9 @@ function App() {
       {tab === 'records' && (
         <div className="formWrap recordsWrap">
           {records.length === 0 ? (
-            <div className="emptyMsg">저장된 기록이 없습니다. 신규 생성 시 자동으로 저장됩니다.</div>
+            <div className="emptyMsg">
+              저장된 기록이 없습니다. 신규 생성 시 자동으로 저장됩니다. (마지막 활동 후 {RETENTION_DAYS}일 지난 기록은 자동 삭제)
+            </div>
           ) : (
             <table className="recordTable">
               <thead>
