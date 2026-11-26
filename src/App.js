@@ -6,6 +6,47 @@ import html2canvas from 'html2canvas';
 const HOLDINGS_FONT_DEFAULT = 32;
 const HOLDINGS_FONT_MIN = 18;
 const LEFT_PAD_RATIO = 0.03;
+const STORAGE_KEY = 'trading-auto:records:v1';
+
+function loadRecords() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
+}
+
+function isValidRecord(r) {
+  return (
+    r &&
+    typeof r.id === 'string' &&
+    typeof r.coinName === 'string' &&
+    typeof r.ticker === 'string' &&
+    Number.isFinite(r.buyPrice) &&
+    Number.isFinite(r.buyAmount) &&
+    Number.isFinite(r.holdings)
+  );
+}
+
+function formatDateTime(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleString('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function calcRate(buy, price) {
+  return ((price - buy) / buy) * 100;
+}
 
 function formatWithCommas(value) {
   if (value === '' || value === null || value === undefined) return '';
@@ -35,7 +76,9 @@ function formatAvgPrice(price) {
 
 function formatIntegerKrw(value) {
   if (!Number.isFinite(value)) return '';
-  return Math.round(value).toLocaleString('ko-KR');
+  const rounded = Math.round(value);
+  if (rounded === 0) return '0';
+  return rounded.toLocaleString('ko-KR');
 }
 
 /** 3000만 이상 ~ 6000만 미만, 끝자리 0이 과도하지 않은 금액 */
@@ -79,6 +122,13 @@ function App() {
   const [showSuggest, setShowSuggest] = useState(false);
   const [status, setStatus] = useState('');
   const [generating, setGenerating] = useState(false);
+
+  // 기록 / 최신화
+  const [tab, setTab] = useState('create'); // 'create' | 'records'
+  const [records, setRecords] = useState(loadRecords);
+  const [selectedId, setSelectedId] = useState('');
+  const [currentPrice, setCurrentPrice] = useState('');
+  const importRef = useRef(null);
 
   // 캡처용 표시 값
   const [option01, setOption01] = useState('');
@@ -136,6 +186,14 @@ function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [records]);
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -257,10 +315,10 @@ function App() {
     });
   };
 
-  const buildCalc = (buy, target, amount) => {
-    const holdings = amount / buy;
+  // 보유수량은 매수 시점에 고정된 값을 받아 계산 (현재가 최신화에도 동일 사용)
+  const buildCalc = (buy, target, amount, holdings = amount / buy) => {
     const holdingsText = holdings.toFixed(8);
-    const rate = ((target - buy) / buy) * 100;
+    const rate = calcRate(buy, target);
     const evalAmount = holdings * target;
     const pnl = evalAmount - amount;
 
@@ -320,11 +378,32 @@ function App() {
 
     try {
       const amount = randomBuyAmount();
+      const holdings = amount / buy;
       const safeName = name.replace(/[\\/:*?"<>|]/g, '_');
+
+      // 기록 저장 (매수금액·보유수량 고정)
+      setRecords((prev) => [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          createdAt: new Date().toISOString(),
+          coinName: name,
+          ticker: symbol,
+          buyPrice: buy,
+          takeProfit: tp,
+          target1: t1,
+          target2: t2,
+          target3: t3,
+          buyAmount: amount,
+          holdings,
+          lastCurrentPrice: null,
+          updatedAt: null,
+        },
+        ...prev,
+      ]);
 
       for (let i = 0; i < jobs.length; i += 1) {
         const job = jobs[i];
-        const calc = buildCalc(buy, job.price, amount);
+        const calc = buildCalc(buy, job.price, amount, holdings);
         applySnapshot({
           name,
           symbol,
@@ -346,6 +425,122 @@ function App() {
     }
   };
 
+  const selectedRecord = records.find((r) => r.id === selectedId) || null;
+
+  const handleSelectRecord = (record) => {
+    setSelectedId(record.id);
+    setCurrentPrice(
+      record.lastCurrentPrice !== null && record.lastCurrentPrice !== undefined
+        ? String(record.lastCurrentPrice)
+        : ''
+    );
+    setStatus(`${record.coinName} 선택됨 — 현재가를 입력하세요.`);
+  };
+
+  const handleDeleteRecord = (record) => {
+    if (!window.confirm(`${record.coinName} 기록을 삭제할까요?`)) return;
+    setRecords((prev) => prev.filter((r) => r.id !== record.id));
+    if (selectedId === record.id) {
+      setSelectedId('');
+      setCurrentPrice('');
+    }
+  };
+
+  const runRefresh = async (saveImage) => {
+    if (!selectedRecord) {
+      setStatus('목록에서 종목을 먼저 선택해 주세요.');
+      return;
+    }
+    const price = Number(currentPrice);
+    if (!Number.isFinite(price) || price <= 0) {
+      setStatus('현재가를 올바르게 입력해 주세요.');
+      return;
+    }
+
+    setGenerating(true);
+    try {
+      const calc = buildCalc(
+        selectedRecord.buyPrice,
+        price,
+        selectedRecord.buyAmount,
+        selectedRecord.holdings
+      );
+      applySnapshot({
+        name: selectedRecord.coinName,
+        symbol: selectedRecord.ticker,
+        ...calc,
+      });
+      await fitHoldingsFont();
+
+      if (!saveImage) {
+        setStatus('미리보기 갱신됨 (저장·기록 반영 안 됨)');
+        return;
+      }
+
+      const safeName = selectedRecord.coinName.replace(/[\\/:*?"<>|]/g, '_');
+      await captureOnce(`${safeName}_현재가.png`);
+
+      setRecords((prev) =>
+        prev.map((r) =>
+          r.id === selectedRecord.id
+            ? {
+                ...r,
+                lastCurrentPrice: price,
+                updatedAt: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+      setStatus(`${selectedRecord.coinName} 현재가 반영 후 이미지 저장 완료`);
+    } catch (err) {
+      console.error(err);
+      setStatus('최신화 중 오류가 발생했습니다.');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const handleExport = () => {
+    const blob = new Blob([JSON.stringify(records, null, 2)], {
+      type: 'application/json',
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    link.href = url;
+    link.download = `trading-records_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text());
+      if (!Array.isArray(parsed)) throw new Error('형식 오류');
+      const valid = parsed.filter(isValidRecord);
+      if (valid.length === 0) throw new Error('유효한 기록 없음');
+
+      setRecords((prev) => {
+        const map = new Map(prev.map((r) => [r.id, r]));
+        valid.forEach((r) => map.set(r.id, r)); // 같은 id는 가져온 값으로 덮어씀
+        return Array.from(map.values()).sort((a, b) =>
+          String(b.createdAt).localeCompare(String(a.createdAt))
+        );
+      });
+      setStatus(`기록 ${valid.length}건을 가져왔습니다.`);
+    } catch (err) {
+      console.error(err);
+      setStatus('가져오기 실패: 올바른 기록 JSON 파일이 아닙니다.');
+    }
+  };
+
+  const isDown = String(option04).startsWith('-');
+
   return (
     <div className="App">
       <div className="imgWrap d-flex">
@@ -358,9 +553,13 @@ function App() {
 
           <div className="option option02">({option02})</div>
 
-          <div className="option option03">{option03}</div>
+          <div className={`option option03${isDown ? ' down' : ''}`}>
+            {option03}
+          </div>
 
-          <div className="option option04">{option04}%</div>
+          <div className={`option option04${isDown ? ' down' : ''}`}>
+            {option04}%
+          </div>
 
           <div
             className="option option05"
@@ -387,6 +586,24 @@ function App() {
         </div>
       </div>
 
+      <div className="tabBar">
+        <button
+          type="button"
+          className={tab === 'create' ? 'active' : ''}
+          onClick={() => setTab('create')}
+        >
+          신규 생성
+        </button>
+        <button
+          type="button"
+          className={tab === 'records' ? 'active' : ''}
+          onClick={() => setTab('records')}
+        >
+          기록·최신화 ({records.length})
+        </button>
+      </div>
+
+      {tab === 'create' && (
       <div className="formWrap">
         <div className="inputWrap suggestWrap" ref={suggestRef}>
           <div className="label">코인명</div>
@@ -457,8 +674,113 @@ function App() {
           </button>
         </div>
 
-        {status && <div className="statusMsg">{status}</div>}
       </div>
+      )}
+
+      {tab === 'records' && (
+        <div className="formWrap recordsWrap">
+          {records.length === 0 ? (
+            <div className="emptyMsg">저장된 기록이 없습니다. 신규 생성 시 자동으로 저장됩니다.</div>
+          ) : (
+            <table className="recordTable">
+              <thead>
+                <tr>
+                  <th>종목</th>
+                  <th>매수가</th>
+                  <th>매수금액</th>
+                  <th>최근 현재가</th>
+                  <th>수익률</th>
+                  <th>수정일</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map((r) => {
+                  const hasLast =
+                    r.lastCurrentPrice !== null && r.lastCurrentPrice !== undefined;
+                  const rate = hasLast ? calcRate(r.buyPrice, r.lastCurrentPrice) : null;
+                  return (
+                    <tr
+                      key={r.id}
+                      className={r.id === selectedId ? 'selected' : ''}
+                      onClick={() => handleSelectRecord(r)}
+                    >
+                      <td>
+                        {r.coinName}
+                        <span className="sub"> {r.ticker}</span>
+                      </td>
+                      <td>{formatAvgPrice(r.buyPrice)}</td>
+                      <td>{formatIntegerKrw(r.buyAmount)}</td>
+                      <td>{hasLast ? formatAvgPrice(r.lastCurrentPrice) : '-'}</td>
+                      <td className={rate !== null && rate < 0 ? 'down' : 'up'}>
+                        {rate !== null ? `${rate.toFixed(2)}%` : '-'}
+                      </td>
+                      <td>{formatDateTime(r.updatedAt || r.createdAt)}</td>
+                      <td>
+                        <button
+                          type="button"
+                          className="linkBtn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteRecord(r);
+                          }}
+                        >
+                          삭제
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+
+          {selectedRecord && (
+            <div className="refreshBox">
+              <div className="refreshTitle">
+                {selectedRecord.coinName} ({selectedRecord.ticker}) — 매수가{' '}
+                {formatAvgPrice(selectedRecord.buyPrice)} / 보유수량{' '}
+                {selectedRecord.holdings.toFixed(8)}
+              </div>
+              <div className="inputWrap">
+                <div className="label">현재가</div>
+                <input
+                  type="text"
+                  value={currentPrice}
+                  onChange={onlyNumber(setCurrentPrice)}
+                  placeholder="현재가 입력"
+                />
+              </div>
+              <div className="btnRow">
+                <button type="button" onClick={() => runRefresh(false)} disabled={generating}>
+                  미리보기
+                </button>
+                <button type="button" onClick={() => runRefresh(true)} disabled={generating}>
+                  {generating ? '처리 중…' : '최신화 + 이미지 저장'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="btnRow">
+            <button type="button" onClick={handleExport} disabled={records.length === 0}>
+              JSON 내보내기
+            </button>
+            <button type="button" onClick={() => importRef.current && importRef.current.click()}>
+              JSON 가져오기
+            </button>
+            <input
+              ref={importRef}
+              type="file"
+              accept="application/json,.json"
+              style={{ display: 'none' }}
+              onChange={handleImport}
+            />
+          </div>
+        </div>
+      )}
+
+      {status && <div className="statusMsg">{status}</div>}
     </div>
   );
 }
