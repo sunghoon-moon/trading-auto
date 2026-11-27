@@ -64,6 +64,14 @@
 .ubPc__market.up .ubPc__tri {color: var(--upTri);}
 .ubPc__market.down .ubPc__tri {color: var(--downTri);}
 
+/* html2canvas 캡처 보정 (실측: 브라우저 렌더 대비 텍스트가 폰트 크기에 비례해 아래로 밀림) */
+.ubPc.ubCapture .ubPc__name {position: relative; top: -5px;}
+.ubPc.ubCapture .ubPc__code {position: relative; top: -4px;}
+.ubPc.ubCapture .ubPc__first strong {position: relative; top: -8px;}
+.ubPc.ubCapture .ubPc__first em {position: relative; top: -4px;}
+.ubPc.ubCapture .ubPc__sub strong {position: relative; top: -5px;}
+.ubPc.ubCapture .ubPc__tri {top: 10px;}
+
 .ubPc__market.even strong, .ubPc__market.even em {color: var(--text);}
 .ubPc__market.up strong, .ubPc__market.up em {color: var(--up);}
 .ubPc__market.down strong, .ubPc__market.down em {color: var(--down);}

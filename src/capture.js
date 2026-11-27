@@ -20,6 +20,14 @@ export async function captureElement(element, filename) {
     backgroundColor: null,
     removeContainer: true,
     logging: false,
+    // 캡처용 복제 DOM에만 'ubCapture' 클래스를 붙인다.
+    // html2canvas는 텍스트 baseline을 브라우저보다 아래로 그리므로(폰트 크기에 비례),
+    // 이 클래스에서만 텍스트를 위로 보정한다. (화면 미리보기는 그대로)
+    onclone: (clonedDoc) => {
+      if (!element.id) return;
+      const cloned = clonedDoc.getElementById(element.id);
+      if (cloned) cloned.classList.add('ubCapture');
+    },
   });
 
   const link = document.createElement('a');
