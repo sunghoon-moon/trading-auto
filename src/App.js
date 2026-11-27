@@ -2,6 +2,7 @@ import './App.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import html2canvas from 'html2canvas';
+import BuyShots from './BuyShots';
 
 const HOLDINGS_FONT_DEFAULT = 32;
 const HOLDINGS_FONT_MIN = 18;
@@ -159,8 +160,8 @@ function App() {
     (async () => {
       try {
         const endpoints = [
-          'https://api.upbit.com/v1/market/all?isDetails=false',
-          '/api/upbit/market/all?isDetails=false',
+          'https://api.upbit.com/v1/market/all?isDetails=true',
+          '/api/upbit/market/all?isDetails=true',
         ];
 
         let data = null;
@@ -184,6 +185,13 @@ function App() {
             koreanName: m.korean_name,
             englishName: m.english_name,
             ticker: m.market.replace('KRW-', ''),
+            // 유의종목 / 주의 항목 하나라도 켜진 종목 (매수 자료의 '위' 배지 자동 판별용)
+            warning: Boolean(m.market_event && m.market_event.warning),
+            caution: Boolean(
+              m.market_event &&
+                m.market_event.caution &&
+                Object.values(m.market_event.caution).some(Boolean)
+            ),
           }));
         setMarkets(krw);
       } catch (err) {
@@ -553,6 +561,31 @@ function App() {
 
   return (
     <div className="App">
+      <div className="tabBar">
+        <button
+          type="button"
+          className={tab === 'create' ? 'active' : ''}
+          onClick={() => setTab('create')}
+        >
+          신규 생성
+        </button>
+        <button
+          type="button"
+          className={tab === 'records' ? 'active' : ''}
+          onClick={() => setTab('records')}
+        >
+          기록·최신화 ({records.length})
+        </button>
+        <button
+          type="button"
+          className={tab === 'buy' ? 'active' : ''}
+          onClick={() => setTab('buy')}
+        >
+          매수 자료
+        </button>
+      </div>
+
+      {tab !== 'buy' && (
       <div className="imgWrap d-flex">
         <div className="img" id="capture">
           <img src="/images/bg.jpg" alt="" />
@@ -595,22 +628,11 @@ function App() {
           </div>
         </div>
       </div>
+      )}
 
-      <div className="tabBar">
-        <button
-          type="button"
-          className={tab === 'create' ? 'active' : ''}
-          onClick={() => setTab('create')}
-        >
-          신규 생성
-        </button>
-        <button
-          type="button"
-          className={tab === 'records' ? 'active' : ''}
-          onClick={() => setTab('records')}
-        >
-          기록·최신화 ({records.length})
-        </button>
+      {/* 입력값을 유지하려고 언마운트하지 않고 숨김 처리 */}
+      <div style={{ display: tab === 'buy' ? 'block' : 'none' }}>
+        <BuyShots markets={markets} />
       </div>
 
       {tab === 'create' && (
@@ -792,7 +814,7 @@ function App() {
         </div>
       )}
 
-      {status && <div className="statusMsg">{status}</div>}
+      {tab !== 'buy' && status && <div className="statusMsg">{status}</div>}
     </div>
   );
 }

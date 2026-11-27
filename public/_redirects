@@ -1,2 +1,3 @@
+/api/upbit-logo/*  https://static.upbit.com/logos/:splat  200!
+/api/upbit/*  https://api.upbit.com/v1/:splat  200!
 /*    /index.html   200
-

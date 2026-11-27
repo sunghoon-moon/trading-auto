@@ -1,0 +1,100 @@
+/* ===== 매수 자료 탭 ===== */
+.ubWrap {display: flex; flex-direction: column; gap: 16px; padding: 10px;}
+.ubPreview {display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px;}
+.ubPreviewItem {display: flex; flex-direction: column; gap: 6px;}
+.ubPreviewLabel {font-size: 12px; color: #666;}
+.ubWrap .formWrap {padding: 0;}
+.ubCheck {display: flex; align-items: center; gap: 6px; cursor: pointer;}
+.ubCheck input {width: 16px; height: 16px;}
+.ubSmallBtn {min-height: 32px; padding: 4px 10px; cursor: pointer; white-space: nowrap;}
+.ubSmallBtn:disabled {opacity: 0.5; cursor: not-allowed;}
+
+/* ===== 공통: 전역 font-family !important 를 이겨야 한다 ===== */
+.ubPc, .ubPc *, .ubM, .ubM * {font-family: Roboto, 'Noto Sans KR', sans-serif !important; font-style: normal;}
+.ubPc *, .ubM * {box-sizing: content-box; margin: 0; padding: 0;}
+
+.ubBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: #dd3c44;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* ===== PC (업비트 시세 상단: 높이 44 + 1 + 87 = 132) ===== */
+.ubPc {position: relative; flex: none; width: 360px; height: 132px; overflow: hidden; background: var(--bg); color: var(--text);}
+.ubPc--light {
+    --bg: #ffffff; --text: #333333; --code: #666666; --arrow: #606776;
+    --up: #dd3c44; --down: #1375ec; --upTri: #d60000; --downTri: #0051c7;
+    --logoBg: #cccccc; --line: #dddddd;
+}
+.ubPc--dark {
+    --bg: #05111e; --text: #d2d4d6; --code: #d2d4d6; --arrow: #8d97a7;
+    --up: #dd3c44; --down: #1375ec; --upTri: #dd3c44; --downTri: #1375ec;
+    --logoBg: #2a3a4d; --line: #1e2939;
+}
+
+/* 업비트 titB: 높이 44px + border-bottom 1px (일반 #ddd / 다크 #1e2939) */
+.ubPc__tit {display: flex; align-items: center; height: 44px; padding-left: 14px; border-bottom: 1px solid var(--line);}
+.ubPc__select {display: flex; align-items: center; height: 44px;}
+.ubPc__logo {display: block; width: 26px; height: 26px; padding-right: 10px;}
+.ubPc__logo img {display: block; width: 26px; height: 26px;}
+.ubPc__logoFallback {display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; background: var(--logoBg); color: #fff; font-size: 12px; font-weight: 700;}
+.ubPc__name {display: block; font-size: 20px; font-weight: 700; line-height: 20px; color: var(--text); white-space: nowrap;}
+.ubPc__code {display: block; margin: 0 4px; font-size: 12px; color: var(--code); white-space: nowrap;}
+.ubPc__caution {display: block; width: 14px; height: 14px;}
+.ubPc__arrow {display: block; width: 13px; height: 44px; padding: 0 8px; overflow: hidden; color: var(--arrow);}
+.ubPc__arrowIco {margin-top: 18.5px; color: var(--arrow);}
+.ubPc--dark .ubPc__arrowIco {margin-top: 20px;}
+
+.ubPc__market {height: 55px; padding: 18px 20px 14px;}
+.ubPc__first {display: block; margin: -6px 0 2px;}
+.ubPc__first strong {display: inline-block; font-size: 32px; font-weight: 500;}
+.ubPc__first em {display: inline-block; margin: 0 4px 0 2px; font-size: 14px; font-weight: 400;}
+.ubPc__sub {display: block;}
+.ubPc__sub strong {display: inline-block; font-size: 16px; font-weight: 500;}
+.ubPc__upDown {position: relative; margin-left: 6px; padding-left: 14px;}
+.ubPc__tri {position: absolute; left: 0; top: 5px;}
+.ubPc__market.up .ubPc__tri {color: var(--upTri);}
+.ubPc__market.down .ubPc__tri {color: var(--downTri);}
+
+.ubPc__market.even strong, .ubPc__market.even em {color: var(--text);}
+.ubPc__market.up strong, .ubPc__market.up em {color: var(--up);}
+.ubPc__market.down strong, .ubPc__market.down em {color: var(--down);}
+
+/* ===== 모바일 앱 다크 (참고 사진 831 x 305 기준) ===== */
+.ubM {
+    position: relative;
+    flex: none;
+    width: 831px;
+    height: 305px;
+    overflow: hidden;
+    background: #04101e;
+    color: #d2d4d6;
+    --m-up: #dd3c44;
+    --m-down: #1375ec;
+    --m-even: #d2d4d6;
+}
+.ubM__back {position: absolute; left: 44px; top: 78px; width: 32px; height: 58px;}
+.ubM__back svg {display: block;}
+.ubM__head {position: absolute; left: 223px; top: 78px; display: flex; align-items: center; height: 54px;}
+.ubM__badge {position: relative; top: -1px; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-right: 11px; border-radius: 8px; background: #d84048; color: #fff; font-size: 28px; font-weight: 700; line-height: 1;}
+.ubM__name {position: relative; top: -10px; font-size: 46px; font-weight: 400; line-height: 54px; color: #d2d4d6; white-space: nowrap;}
+.ubM__drop {margin-left: 25px; color: #d2d4d6;}
+.ubM__peek {position: absolute; left: 44px; top: 220px; width: 22px; height: 40px;}
+.ubM__peek svg {display: block;}
+.ubM__price {position: absolute; left: 109px; top: 161px; font-size: 64px; font-weight: 400; line-height: 70px; white-space: nowrap;}
+.ubM__chg {position: absolute; left: 110px; top: 242px; display: flex; align-items: center; font-size: 41px; font-weight: 400; line-height: 42px; white-space: nowrap;}
+.ubM__tri {margin-top: 19px; margin-left: 40px;}
+.ubM__diff {margin-left: 19px;}
+
+.ubM__price.even, .ubM__chg.even {color: var(--m-even);}
+.ubM__price.up, .ubM__chg.up {color: var(--m-up);}
+.ubM__price.down, .ubM__chg.down {color: var(--m-down);}
+.ubM__chg span {color: inherit; font-size: inherit; font-weight: inherit;}
